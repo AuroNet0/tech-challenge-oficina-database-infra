@@ -1,0 +1,3 @@
+db_name     = "oficina"
+db_username = "oficina_admin"
+db_password = "CHANGE_ME"
