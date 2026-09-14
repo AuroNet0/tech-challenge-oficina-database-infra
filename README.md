@@ -20,6 +20,42 @@ O acesso à porta PostgreSQL (`5432`) é controlado por Security Group. Atualmen
 
 A VPC e as subnets privadas não são criadas neste repositório. Elas são obtidas por data sources a partir da infraestrutura compartilhada criada pelo repositório `tech-challenge-oficina-k8s-infra`.
 
+## Diagrama da arquitetura
+
+```mermaid
+flowchart TB
+    CICD["GitHub Actions"]
+
+    TF["Terraform"]
+
+    subgraph AWS["AWS"]
+
+        subgraph VPC["VPC compartilhada"]
+            SG["RDS Security Group<br/>PostgreSQL 5432"]
+
+            subgraph PRIVATE["Private Subnets"]
+                SUBNETGROUP["DB Subnet Group"]
+                RDS[("Amazon RDS<br/>PostgreSQL<br/>Database: oficina")]
+            end
+        end
+
+    end
+
+    API["Oficina API<br/>Amazon EKS"]
+    AUTH["Auth Lambda"]
+
+    CICD -->|"OIDC"| TF
+    TF --> SG
+    TF --> SUBNETGROUP
+    TF --> RDS
+
+    SUBNETGROUP --> RDS
+    SG --> RDS
+
+    API -->|"TCP 5432"| SG
+    AUTH -->|"TCP 5432"| SG
+```
+
 ## Tecnologias Utilizadas
 
 - Terraform
