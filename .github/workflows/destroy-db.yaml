@@ -1,0 +1,58 @@
+name: Destroy Database Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Digite DESTROY para confirmar'
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  TF_INPUT: false
+
+jobs:
+  destroy:
+    name: Destroy Database
+    runs-on: ubuntu-latest
+    if: inputs.confirmation == 'DESTROY'
+
+    environment: production
+
+    concurrency:
+      group: destroy-database
+      cancel-in-progress: false
+
+    defaults:
+      run:
+        working-directory: terraform
+
+    env:
+      TF_VAR_db_password: ${{ secrets.TF_VAR_DB_PASSWORD }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform init
+        run: terraform init -input=false
+
+      - name: Terraform plan destroy
+        run: terraform plan -destroy -input=false
+
+      - name: Terraform destroy
+        run: terraform destroy -auto-approve -input=false
